@@ -214,7 +214,7 @@ QPushButton:disabled {
 }</string>
        </property>
        <property name="text">
-        <string>OK</string>
+        <string notr="true">OK</string>
        </property>
        <property name="default">
         <bool>true</bool>

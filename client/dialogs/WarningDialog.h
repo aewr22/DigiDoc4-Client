@@ -32,12 +32,20 @@ class WarningDialog final: public QDialog
 	Q_OBJECT
 
 public:
+	enum ButtonText {
+		Cancel,
+		OK,
+		NO,
+		YES,
+	};
 	explicit WarningDialog(const QString &text, const QString &details, QWidget *parent = nullptr);
 	explicit WarningDialog(const QString &text, QWidget *parent = nullptr);
 	~WarningDialog() final;
 
+	void addButton(ButtonText label, int ret, bool red = false);
 	void addButton(const QString& label, int ret, bool red = false);
 	void setButtonSize(int width, int margin);
+	void setCancelText(ButtonText label);
 	void setCancelText(const QString& label);
 	void resetCancelStyle();
 	void setText(const QString& text);
@@ -45,6 +53,8 @@ public:
 	static WarningDialog *show(QWidget *parent, const QString &text, const QString &details = {});
 
 private:
+	static QString buttonLabel(ButtonText label);
+
 	Ui::WarningDialog *ui;
 	WaitDialogHider hider;
 };

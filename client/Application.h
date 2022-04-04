@@ -77,7 +77,7 @@ public:
 	static void setConfValue( ConfParameter parameter, const QVariant &value );
 
 public Q_SLOTS:
-	void showClient(const QStringList &params = {}, bool crypto = false, bool sign = false, bool newWindow = false);
+	static void showClient(const QStringList &params = {}, bool crypto = false, bool sign = false, bool newWindow = false);
 
 private Q_SLOTS:
 	void parseArgs(const QString &msg = {});

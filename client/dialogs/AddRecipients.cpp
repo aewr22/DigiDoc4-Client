@@ -22,6 +22,7 @@
 #include "ui_AddRecipients.h"
 
 #include "Application.h"
+#include "CheckConnection.h"
 #include "common_enums.h"
 #include "FileDialog.h"
 #include "IKValidator.h"
@@ -32,18 +33,18 @@
 #include "dialogs/WarningDialog.h"
 #include "effects/Overlay.h"
 
-#include <common/Configuration.h>
-
-#include <QDebug>
-#include <QDateTime>
-#include <QSslKey>
-#include <QStandardPaths>
+#include <QtCore/QDateTime>
+#include <QtCore/QDebug>
+#include <QtCore/QJsonArray>
 #include <QtCore/QJsonObject>
+#include <QtCore/QSettings>
+#include <QtCore/QStandardPaths>
 #include <QtCore/QXmlStreamReader>
 #include <QtCore/QXmlStreamWriter>
-#include <QtCore/QSettings>
-#include <QMessageBox>
+#include <QtNetwork/QSslConfiguration>
 #include <QtNetwork/QSslError>
+#include <QtNetwork/QSslKey>
+#include <QtWidgets/QMessageBox>
 
 AddRecipients::AddRecipients(ItemList* itemList, QWidget *parent)
 	: QDialog(parent)
@@ -131,7 +132,7 @@ void AddRecipients::addAllRecipientToRightPane()
 	QList<HistoryCertData> history;
 	for(AddressItem *value: leftList)
 	{
-		if(!rightList.contains(value->getKey().cert))
+		if(!rightList.contains(value->getKey()))
 		{
 			addRecipientToRightPane(value);
 			history.append(toHistory(value->getKey().cert));
@@ -216,36 +217,33 @@ AddressItem * AddRecipients::addRecipientToLeftPane(const QSslCertificate& cert)
 
 bool AddRecipients::addRecipientToRightPane(const CKey &key, bool update)
 {
-	if (rightList.contains(key.cert))
+	if (rightList.contains(key))
 		return false;
 
 	if(update)
 	{
-		auto expiryDate = key.cert.expiryDate();
-		if(expiryDate <= QDateTime::currentDateTime())
+		if(key.cert.expiryDate() <= QDateTime::currentDateTime())
 		{
-			auto *dlg = new WarningDialog(tr("Are you sure that you want use certificate for encrypting, which expired on %1?<br />"
-				"When decrypter has updated certificates then decrypting is impossible.")
-				.arg(expiryDate.toString(QStringLiteral("dd.MM.yyyy hh:mm:ss"))), this);
-			dlg->setCancelText(tr("NO"));
-			dlg->addButton(tr("YES"), QMessageBox::Yes);
-			if(dlg->exec() != QMessageBox::Yes)
-				return false;
+			WarningDialog::show(this, tr("Failed to add certificate. An expired certificate cannot be used for encryption."));
+			return false;
 		}
+		QSslConfiguration backup = QSslConfiguration::defaultConfiguration();
+		QSslConfiguration::setDefaultConfiguration(CheckConnection::sslConfiguration());
 		QList<QSslError> errors = QSslCertificate::verify({ key.cert });
+		QSslConfiguration::setDefaultConfiguration(backup);
 		errors.removeAll(QSslError(QSslError::CertificateExpired, key.cert));
 		if(!errors.isEmpty())
 		{
 			auto *dlg = new WarningDialog(tr("Recipient’s certification chain contains certificates that are not trusted. Continue with encryption?"), this);
-			dlg->setCancelText(tr("NO"));
-			dlg->addButton(tr("YES"), QMessageBox::Yes);
+			dlg->setCancelText(WarningDialog::NO);
+			dlg->addButton(WarningDialog::YES, QMessageBox::Yes);
 			if(dlg->exec() != QMessageBox::Yes)
 				return false;
 		}
 	}
 	updated = update;
 
-	rightList.append(key.cert);
+	rightList.append(key);
 
 	auto *rightItem = new AddressItem(key, ui->rightPane);
 	connect(rightItem, &AddressItem::remove, this, &AddRecipients::removeRecipientFromRightPane);
@@ -278,7 +276,7 @@ void AddRecipients::addSelectedCerts(const QList<HistoryCertData>& selectedCertD
 
 QString AddRecipients::defaultUrl(QLatin1String key, const QString &defaultValue)
 {
-	return qApp->confValue(key).toString(defaultValue);
+	return Application::confValue(key).toString(defaultValue);
 }
 
 void AddRecipients::enableRecipientFromCard()
@@ -305,7 +303,7 @@ QList<CKey> AddRecipients::keys()
 QString AddRecipients::path()
 {
 #ifdef Q_OS_WIN
-	QSettings s( QSettings::IniFormat, QSettings::UserScope, qApp->organizationName(), "qdigidoccrypto" );
+	QSettings s( QSettings::IniFormat, QSettings::UserScope, Application::organizationName(), "qdigidoccrypto" );
 	QFileInfo f( s.fileName() );
 	return f.absolutePath() + "/" + f.baseName() + "/certhistory.xml";
 #else
@@ -335,7 +333,7 @@ void AddRecipients::removeRecipientFromRightPane(Item *toRemove)
 		it.value()->setDisabled(false);
 		it.value()->showButton(AddressItem::Add);
 	}
-	rightList.removeAll(rightItem->getKey().cert);
+	rightList.removeAll(rightItem->getKey());
 	updated = true;
 	ui->confirm->setDisabled(rightList.isEmpty());
 }

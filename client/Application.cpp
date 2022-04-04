@@ -228,12 +228,6 @@ private:
 		if(Settings::TSA_URL == Application::confValue(Settings::TSA_URL.KEY).toString())
 			Settings::TSA_URL.clear(); // Cleanup user conf if it is default url
 		Settings::SETTINGS_MIGRATED.clear();
-		QList<QSslCertificate> list;
-		for(const auto &cert: Application::confValue(QLatin1String("CERT-BUNDLE")).toArray())
-			list.append(QSslCertificate(fromBase64(cert), QSsl::Der));
-		QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
-		ssl.setCaCertificates(list);
-		QSslConfiguration::setDefaultConfiguration(ssl);
 	}
 #endif
 
@@ -917,7 +911,6 @@ void Application::showClient(const QStringList &params, bool crypto, bool sign, 
 	// Required for restoring minimized window on macOS
 	w->setWindowState(Qt::WindowActive);
 #endif
-	w->addAction(d->closeAction);
 	w->activateWindow();
 	w->show();
 	w->raise();

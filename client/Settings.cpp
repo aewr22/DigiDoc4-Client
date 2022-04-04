@@ -26,6 +26,15 @@
 template<class T, class D = T>
 using Option = Settings::Option<T, D>;
 
+const Option<bool> Settings::CDOC2_DEFAULT { QStringLiteral("CDOC2-DEFAULT"), false };
+const Option<bool> Settings::CDOC2_NOTIFICATION { QStringLiteral("CDOC2-NOTIFICATION"), false };
+const Option<bool> Settings::CDOC2_USE_KEYSERVER { QStringLiteral("CDOC2-USE-KEYSERVER"), true };
+const Option<QString, QString (*)()> Settings::CDOC2_DEFAULT_KEYSERVER { QStringLiteral("CDOC2-DEFAULT-KEYSERVER"), [] {
+	return qApp->confValue(QLatin1String("CDOC2-DEFAULT-KEYSERVER")).toString(QStringLiteral("ria-test"));
+}};
+const Option<QString> Settings::CDOC2_GET { QStringLiteral("CDOC2-GET"), QStringLiteral(CDOC2_GET_URL) };
+const Option<QString> Settings::CDOC2_POST { QStringLiteral("CDOC2-POST"), QStringLiteral(CDOC2_POST_URL) };
+
 const Option<QString> Settings::MID_UUID { QStringLiteral("MIDUUID") };
 const Option<QString> Settings::MID_NAME { QStringLiteral("MIDNAME"), QStringLiteral("RIA DigiDoc") };
 const Option<QString, QString (*)()> Settings::MID_PROXY_URL { QStringLiteral("MID-PROXY-URL"), [] {

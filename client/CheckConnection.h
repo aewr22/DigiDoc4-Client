@@ -24,12 +24,15 @@
 class CheckConnection
 {
 public:
-	CheckConnection();
-
 	bool check(const QString &url);
 	QNetworkReply::NetworkError error() const;
 	QString errorString() const;
 	QString errorDetails() const;
+
+	static QNetworkAccessManager* setupNAM(QNetworkRequest &req);
+	static QNetworkAccessManager* setupNAM(QNetworkRequest &req,
+		const QSslCertificate &cert, const QSslKey &key);
+	static QSslConfiguration sslConfiguration();
 
 private:
 	QNetworkReply::NetworkError m_error = QNetworkReply::NoError;

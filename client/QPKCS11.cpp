@@ -19,7 +19,7 @@
 
 #include "QPKCS11_p.h"
 
-#include "CryptoDoc.h"
+#include "Crypto.h"
 #include "SslCertificate.h"
 #include "TokenData.h"
 #include "dialogs/PinPopup.h"
@@ -39,12 +39,12 @@ namespace Qt {
 
 QWidget* rootWindow()
 {
-	QWidget* win = qApp->activeWindow();
+	QWidget* win = QApplication::activeWindow();
 	QWidget* root {};
 
 	if (!win)
 	{
-		for (QWidget *widget: qApp->topLevelWidgets())
+		for (QWidget *widget: QApplication::topLevelWidgets())
 		{
 			if (widget->isWindow())
 			{
@@ -120,6 +120,29 @@ QPKCS11::~QPKCS11()
 	delete d;
 }
 
+QByteArray QPKCS11::decrypt(const QByteArray &data, bool oaep) const
+{
+	std::vector<CK_OBJECT_HANDLE> key = d->findObject(d->session, CKO_PRIVATE_KEY, d->id);
+	if(key.size() != 1)
+		return {};
+
+	CK_RSA_PKCS_OAEP_PARAMS params { CKM_SHA256, CKG_MGF1_SHA256, 0, nullptr, 0 };
+	CK_MECHANISM mech = oaep ?
+		CK_MECHANISM{ CKM_RSA_PKCS_OAEP, &params, sizeof(params) } :
+		CK_MECHANISM{ CKM_RSA_PKCS, nullptr, 0 };
+	if(d->f->C_DecryptInit(d->session, &mech, key[0]) != CKR_OK)
+		return {};
+
+	CK_ULONG size = 0;
+	if(d->f->C_Decrypt(d->session, CK_BYTE_PTR(data.constData()), CK_ULONG(data.size()), nullptr, &size) != CKR_OK)
+		return {};
+
+	QByteArray result(int(size), 0);
+	if(d->f->C_Decrypt(d->session, CK_BYTE_PTR(data.constData()), CK_ULONG(data.size()), CK_BYTE_PTR(result.data()), &size) != CKR_OK)
+		return {};
+	return result;
+}
+
 QByteArray QPKCS11::derive(const QByteArray &publicKey) const
 {
 	std::vector<CK_OBJECT_HANDLE> key = d->findObject(d->session, CKO_PRIVATE_KEY, d->id);
@@ -146,28 +169,12 @@ QByteArray QPKCS11::derive(const QByteArray &publicKey) const
 QByteArray QPKCS11::deriveConcatKDF(const QByteArray &publicKey, QCryptographicHash::Algorithm digest,
 	int keySize, const QByteArray &algorithmID, const QByteArray &partyUInfo, const QByteArray &partyVInfo) const
 {
-	return CryptoDoc::concatKDF(digest, quint32(keySize), derive(publicKey), algorithmID + partyUInfo + partyVInfo);
+	return Crypto::concatKDF(digest, quint32(keySize), derive(publicKey), algorithmID + partyUInfo + partyVInfo);
 }
 
-QByteArray QPKCS11::decrypt( const QByteArray &data ) const
+QByteArray QPKCS11::deriveHMACExtract(const QByteArray &publicKey, const QByteArray &salt, int keySize) const
 {
-	QByteArray result;
-	std::vector<CK_OBJECT_HANDLE> key = d->findObject(d->session, CKO_PRIVATE_KEY, d->id);
-	if(key.size() != 1)
-		return result;
-
-	CK_MECHANISM mech { CKM_RSA_PKCS, nullptr, 0 };
-	if(d->f->C_DecryptInit(d->session, &mech, key[0]) != CKR_OK)
-		return result;
-
-	CK_ULONG size = 0;
-	if(d->f->C_Decrypt(d->session, CK_BYTE_PTR(data.constData()), CK_ULONG(data.size()), nullptr, &size) != CKR_OK)
-		return result;
-
-	result.resize(int(size));
-	if(d->f->C_Decrypt(d->session, CK_BYTE_PTR(data.constData()), CK_ULONG(data.size()), CK_BYTE_PTR(result.data()), &size) != CKR_OK)
-		result.clear();
-	return result;
+	return Crypto::extract(derive(publicKey), salt, keySize);
 }
 
 bool QPKCS11::isLoaded() const
@@ -211,7 +218,7 @@ bool QPKCS11::load( const QString &driver )
 
 QPKCS11::PinStatus QPKCS11::lastError() const
 {
-	return d->lastError;
+	return QPKCS11::PinOK;
 }
 
 QPKCS11::PinStatus QPKCS11::login(const TokenData &t)
@@ -349,7 +356,7 @@ bool QPKCS11::reload()
 {
 	static QMultiHash<QString,QByteArray> drivers {
 #ifdef Q_OS_MAC
-		{ qApp->applicationDirPath() + "/opensc-pkcs11.so", {} },
+		{ QApplication::applicationDirPath() + "/opensc-pkcs11.so", {} },
 		{ "/Library/latvia-eid/lib/eidlv-pkcs11.bundle/Contents/MacOS/eidlv-pkcs11", "3BDD18008131FE45904C41545649412D65494490008C" }, // LV-G1
 		{ "/Library/latvia-eid/lib/eidlv-pkcs11.bundle/Contents/MacOS/eidlv-pkcs11", "3BDB960080B1FE451F830012428F536549440F900020" }, // LV-G2
 		{ "/Library/mCard/lib/mcard-pkcs11.so", "3B9D188131FC358031C0694D54434F5373020505D3" }, // LT-G3
@@ -418,36 +425,26 @@ QByteArray QPKCS11::sign(QCryptographicHash::Algorithm type, const QByteArray &d
 		switch(type)
 		{
 		case QCryptographicHash::Sha224:
-			data += QByteArray::fromHex("302d300d06096086480165030402040500041c");
-			pssParams.hashAlg = CKM_SHA224;
-			pssParams.mgf = CKG_MGF1_SHA224;
-			pssParams.sLen = 24;
+			data = QByteArray::fromHex("302d300d06096086480165030402040500041c");
+			pssParams = { CKM_SHA224, CKG_MGF1_SHA224, 24 };
 			break;
 		case QCryptographicHash::Sha256:
-			data += QByteArray::fromHex("3031300d060960864801650304020105000420");
-			pssParams.hashAlg = CKM_SHA256;
-			pssParams.mgf = CKG_MGF1_SHA256;
-			pssParams.sLen = 32;
+			data = QByteArray::fromHex("3031300d060960864801650304020105000420");
+			pssParams = { CKM_SHA256, CKG_MGF1_SHA256, 32 };
 			break;
 		case QCryptographicHash::Sha384:
-			data += QByteArray::fromHex("3041300d060960864801650304020205000430");
-			pssParams.hashAlg = CKM_SHA384;
-			pssParams.mgf = CKG_MGF1_SHA384;
-			pssParams.sLen = 48;
+			data = QByteArray::fromHex("3041300d060960864801650304020205000430");
+			pssParams = { CKM_SHA384, CKG_MGF1_SHA384, 48 };
 			break;
 		case QCryptographicHash::Sha512:
-			data += QByteArray::fromHex("3051300d060960864801650304020305000440");
-			pssParams.hashAlg = CKM_SHA512;
-			pssParams.mgf = CKG_MGF1_SHA512;
-			pssParams.sLen = 64;
+			data = QByteArray::fromHex("3051300d060960864801650304020305000440");
+			pssParams = { CKM_SHA512, CKG_MGF1_SHA512, 64 };
 			break;
 		default: break;
 		}
 		if(d->isPSS)
 		{
-			mech.mechanism = CKM_RSA_PKCS_PSS;
-			mech.pParameter = &pssParams;
-			mech.ulParameterLen = sizeof(CK_RSA_PKCS_PSS_PARAMS);
+			mech = { CKM_RSA_PKCS_PSS, &pssParams, sizeof(CK_RSA_PKCS_PSS_PARAMS) };
 			data.clear();
 		}
 	}

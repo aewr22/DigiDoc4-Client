@@ -56,18 +56,6 @@
         <translation>Certificates (*.cer *.crt *.pem)</translation>
     </message>
     <message>
-        <source>Are you sure that you want use certificate for encrypting, which expired on %1?&lt;br /&gt;When decrypter has updated certificates then decrypting is impossible.</source>
-        <translation>Are you sure that you want use certificate for encrypting, which expired on %1?&lt;br /&gt;&lt;br /&gt;When decrypter has updated certificates then decrypting is impossible.</translation>
-    </message>
-    <message>
-        <source>YES</source>
-        <translation>YES</translation>
-    </message>
-    <message>
-        <source>NO</source>
-        <translation>NO</translation>
-    </message>
-    <message>
         <source>Recipient’s certification chain contains certificates that are not trusted. Continue with encryption?</source>
         <translation>Recipient’s certification chain contains certificates that are not trusted. Continue with encryption?</translation>
     </message>
@@ -99,6 +87,10 @@
     <message>
         <source>The name you were looking for gave too many results, please refine your search.</source>
         <translation>The name you were looking for gave too many results, please refine your search.</translation>
+    </message>
+    <message>
+        <source>Failed to add certificate. An expired certificate cannot be used for encryption.</source>
+        <translation>Failed to add certificate. An expired certificate cannot be used for encryption.</translation>
     </message>
 </context>
 <context>
@@ -219,6 +211,13 @@
     <message>
         <source>https://www.id.ee/en/id-help/</source>
         <translation>https://www.id.ee/en/id-help/</translation>
+    </message>
+</context>
+<context>
+    <name>CDoc2</name>
+    <message>
+        <source>CDoc contains additional payload data that is not part of content</source>
+        <translation>CDoc contains additional payload data that is not part of content</translation>
     </message>
 </context>
 <context>
@@ -602,12 +601,32 @@
         <translation>Digi-ID</translation>
     </message>
     <message>
-        <source>Failed to open the container. You need to update your ID-software in order to open CDOC2 containers. Install new ID-software from &lt;a href=&apos;https://www.id.ee/en/article/install-id-software/&apos;&gt;www.id.ee&lt;/a&gt;.</source>
-        <translation>Failed to open the container. You need to update your ID-software in order to open CDOC2 containers. Install new ID-software from &lt;a href=&apos;https://www.id.ee/en/article/install-id-software/&apos;&gt;www.id.ee&lt;/a&gt;.</translation>
+        <source>Failed to decrypt document</source>
+        <translation>Failed to decrypt document</translation>
+    </message>
+    <message>
+        <source>Failed to retrieve transport key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open document</source>
+        <translation>Failed to open document</translation>
     </message>
     <message>
         <source>An error occurred while opening the document.</source>
         <translation>An error occurred while opening the document.</translation>
+    </message>
+    <message>
+        <source>You must enter your PIN code twice in order to decrypt the CDOC2 container. The first PIN entry is required for authentication to the key server referenced in the CDOC2 container. Second PIN entry is required to decrypt the CDOC2 container.</source>
+        <translation>You must enter your PIN code twice in order to decrypt the CDOC2 container. The first PIN entry is required for authentication to the key server referenced in the CDOC2 container. Second PIN entry is required to decrypt the CDOC2 container.</translation>
+    </message>
+    <message>
+        <source>Failed to encrypt document. Please check your internet connection and network settings.</source>
+        <translation>Failed to encrypt document. Please check your internet connection and network settings.</translation>
+    </message>
+    <message>
+        <source>DON&apos;T SHOW AGAIN</source>
+        <translation>DON&apos;T SHOW AGAIN</translation>
     </message>
 </context>
 <context>
@@ -728,6 +747,14 @@
         <source>Applet version</source>
         <translation>Applet version</translation>
     </message>
+    <message>
+        <source>true</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>false</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DigiDoc</name>
@@ -796,14 +823,6 @@
         <translation>The limit for digital signatures per month has been reached for this IP address. &lt;a href=&quot;https://www.id.ee/en/article/for-organisations-that-sign-large-quantities-of-documents-using-digidoc4-client/&quot;&gt;Additional information&lt;/a&gt;</translation>
     </message>
     <message>
-        <source>CANCEL</source>
-        <translation>CANCEL</translation>
-    </message>
-    <message>
-        <source>YES</source>
-        <translation>YES</translation>
-    </message>
-    <message>
         <source>Please check your computer time. &lt;a href=&apos;https://www.id.ee/en/article/digidoc4-client-error-please-check-your-computer-time-2/&apos;&gt;Additional information&lt;/a&gt;</source>
         <translation>Please check your computer time. &lt;a href=&apos;https://www.id.ee/en/article/digidoc4-client-error-please-check-your-computer-time-2/&apos;&gt;Additional information&lt;/a&gt;</translation>
     </message>
@@ -853,10 +872,6 @@
     <message>
         <source>Internal error</source>
         <translation>Internal error</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation>OK</translation>
     </message>
     <message>
         <source>Cannot add file with name &apos;mimetype&apos; to the envelope.</source>
@@ -914,14 +929,6 @@
         <translation>Add files</translation>
     </message>
     <message>
-        <source>NO</source>
-        <translation>NO</translation>
-    </message>
-    <message>
-        <source>YES</source>
-        <translation>YES</translation>
-    </message>
-    <message>
         <source>SAVE WITH OTHER NAME</source>
         <translation>SAVE WITH OTHER NAME</translation>
     </message>
@@ -936,10 +943,6 @@
     <message>
         <source>%1 already exists.&lt;br /&gt;Do you want replace it?</source>
         <translation>%1 already exists.&lt;br /&gt;Do you want replace it?</translation>
-    </message>
-    <message>
-        <source>CANCEL</source>
-        <translation>CANCEL</translation>
     </message>
 </context>
 <context>
@@ -1314,6 +1317,14 @@
         <source>Expiry date</source>
         <translation>Expiry date</translation>
     </message>
+    <message>
+        <source>Key server ID</source>
+        <translation>Key server ID</translation>
+    </message>
+    <message>
+        <source>Transaction ID</source>
+        <translation>Transaction ID</translation>
+    </message>
 </context>
 <context>
     <name>LdapSearch</name>
@@ -1415,10 +1426,6 @@ ID-CARD</translation>
 <context>
     <name>MainWindow</name>
     <message>
-        <source>YES</source>
-        <translation>YES</translation>
-    </message>
-    <message>
         <source>Help</source>
         <translation>Help</translation>
     </message>
@@ -1517,10 +1524,6 @@ ID-CARD</translation>
     <message>
         <source>You are about to delete the last file in the container, it is removed along with the container.</source>
         <translation>You are about to delete the last file in the container, it is removed along with the container.</translation>
-    </message>
-    <message>
-        <source>CANCEL</source>
-        <translation>CANCEL</translation>
     </message>
     <message>
         <source>Removing signature</source>
@@ -1913,10 +1916,6 @@ and enter Smart-ID PIN2-code.</translation>
     <message>
         <source>CANCEL</source>
         <translation>CANCEL</translation>
-    </message>
-    <message>
-        <source>OK</source>
-        <translation>OK</translation>
     </message>
     <message>
         <source>PIN will be locked next failed attempt</source>
@@ -2598,10 +2597,6 @@ Additional licenses and components</translation>
         <translation>%1 version %2, released %3</translation>
     </message>
     <message>
-        <source>YES</source>
-        <translation>YES</translation>
-    </message>
-    <message>
         <source>NO</source>
         <translation>NO</translation>
     </message>
@@ -2673,6 +2668,30 @@ Additional licenses and components</translation>
     <message>
         <source>Time-Stamping service SSL certificate</source>
         <translation>Time-Stamping Service SSL certificate</translation>
+    </message>
+    <message>
+        <source>Use key server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>UUID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fetch URL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Post URL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Custom</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2922,10 +2941,6 @@ Additional licenses and components</translation>
     <message>
         <source>Remove signature %1?</source>
         <translation>Remove signature %1?</translation>
-    </message>
-    <message>
-        <source>CANCEL</source>
-        <translation>CANCEL</translation>
     </message>
     <message>
         <source>Remove signature</source>
@@ -3197,6 +3212,18 @@ Additional licenses and components</translation>
         <source>Close</source>
         <extracomment>accessible</extracomment>
         <translation>Close</translation>
+    </message>
+    <message>
+        <source>NO</source>
+        <translation>NO</translation>
+    </message>
+    <message>
+        <source>CANCEL</source>
+        <translation>CANCEL</translation>
+    </message>
+    <message>
+        <source>YES</source>
+        <translation>YES</translation>
     </message>
 </context>
 <context>

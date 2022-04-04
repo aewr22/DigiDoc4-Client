@@ -65,6 +65,11 @@ WarningDialog::~WarningDialog()
 	delete ui;
 }
 
+void WarningDialog::addButton(ButtonText label, int ret, bool red)
+{
+	addButton(buttonLabel(label), ret, red);
+}
+
 void WarningDialog::addButton(const QString& label, int ret, bool red)
 {
 	auto *button = new QPushButton(label, this);
@@ -90,6 +95,16 @@ void WarningDialog::addButton(const QString& label, int ret, bool red)
 	ui->buttonBarLayout->insertWidget(ui->buttonBarLayout->findChildren<QPushButton>().size() + 1, button);
 }
 
+QString WarningDialog::buttonLabel(ButtonText label)
+{
+	switch (label) {
+	case NO: return tr("NO");
+	case OK: return QStringLiteral("OK");
+	case Cancel: return tr("CANCEL");
+	case YES: return tr("YES");
+	}
+}
+
 void WarningDialog::resetCancelStyle()
 {
 	style()->unpolish(ui->cancel);
@@ -102,6 +117,11 @@ void WarningDialog::setButtonSize(int width, int margin)
 	ui->buttonBarLayout->setSpacing(margin);
 	ui->cancel->setMinimumSize(width, ui->cancel->minimumHeight());
 	ui->cancel->setMaximumSize(width, ui->cancel->minimumHeight());
+}
+
+void WarningDialog::setCancelText(ButtonText label)
+{
+	setCancelText(buttonLabel(label));
 }
 
 void WarningDialog::setCancelText(const QString& label)

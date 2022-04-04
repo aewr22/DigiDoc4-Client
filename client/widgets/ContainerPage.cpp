@@ -154,8 +154,8 @@ void ContainerPage::clearPopups()
 
 void ContainerPage::elideFileName()
 {
-	ui->containerFile->setText("<a href='#browse-Container'><span style='color:rgb(53, 55, 57)'>" +
-		ui->containerFile->fontMetrics().elidedText(FileDialog::normalized(fileName).toHtmlEscaped(), Qt::ElideMiddle, ui->containerFile->width()) + "</span></a>");
+	ui->containerFile->setText(QStringLiteral("<a href='#browse-Container' style='color:rgb(53, 55, 57)'>%1</a>")
+		.arg(ui->containerFile->fontMetrics().elidedText(FileDialog::normalized(fileName).toHtmlEscaped(), Qt::ElideMiddle, ui->containerFile->width())));
 }
 
 bool ContainerPage::eventFilter(QObject *o, QEvent *e)
@@ -345,8 +345,7 @@ void ContainerPage::transition(DigiDoc* container)
 	hasEmptyFile = false;
 	for (auto i = 0; i < container->documentModel()->rowCount(); i++)
 	{
-		const auto fileSize = container->documentModel()->fileSize(i).trimmed();
-		if (fileSize.startsWith(QStringLiteral("0 "), Qt::CaseInsensitive))
+		if(container->documentModel()->fileSize(i) == 0)
 		{
 			emit warning(EmptyFileWarning);
 			hasEmptyFile = true;
