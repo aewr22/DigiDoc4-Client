@@ -19,17 +19,25 @@ apps:
   qdigidoc4:
     command: usr/bin/qdigidoc4
     desktop: usr/share/applications/qdigidoc4.desktop
-    extensions: [kde-neon]
+    #extensions: [kde-neon]
     plugs: [home, network]
   digidoc-tool:
     command: usr/bin/digidoc-tool
 
 parts:
+  libdigidocpp:
+    plugin: cmake
+    source: https://github.com/open-eid/libdigidocpp.git
+    stage-packages: [libxalan-c111, libxerces-c3.2, libxml-security-c20]
+    build-packages: [g++, xxd, libxml-security-c-dev, libssl-dev, zlib1g-dev, xsdcxx]
+    cmake-parameters: [-DCMAKE_INSTALL_PREFIX=/usr, -DCMAKE_FIND_ROOT_PATH=/usr]
   qdigidoc4:
     plugin: cmake
     source: .
-    stage-packages: [opensc-pkcs11, libdigidocpp-tools]
-    build-packages: [libdigidocpp-dev, libssl-dev, libpcsclite-dev, libldap2-dev]
+    stage-packages: [opensc-pkcs11]
+    build-packages: [libssl-dev, libpcsclite-dev, libldap2-dev]
+    build-snaps: [kf5-5-104-qt-5-15-8-core22-sdk]
+    after: [libdigidocpp]
     cmake-parameters:
       - -DCMAKE_INSTALL_PREFIX=/usr
-      - "-DCMAKE_FIND_ROOT_PATH=/usr\\;/snap/kf5-5-103-qt-5-15-8-core22-sdk/current"
+      - "-DCMAKE_FIND_ROOT_PATH=/usr\\;/root/stage\\;/snap/kf5-5-104-qt-5-15-8-core22-sdk/current"
