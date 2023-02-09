@@ -102,7 +102,6 @@ private:
 	static void closeWindow();
 	static void migrateSettings();
 	static void showWarning(const QString &msg, const digidoc::Exception &e);
-	static QWidget* uniqueRoot();
 #if defined(Q_OS_MAC)
 	static void initMacEvents();
 	static void deinitMacEvents();

@@ -344,7 +344,7 @@ Application::Application( int &argc, char **argv )
 	d->conf = new Configuration(this);
 	connect(d->conf, &Configuration::updateReminder,
 			[&](bool /* expired */, const QString & /* title */, const QString &message){
-		WarningDialog::show(qApp->activeWindow(), message);
+		WarningDialog::show(Application::mainWindow(), message);
 	});
 #endif
 
@@ -372,11 +372,10 @@ Application::Application( int &argc, char **argv )
 		return interface;
 	});
 
-
 	installTranslator( &d->appTranslator );
 	installTranslator( &d->commonTranslator );
 	installTranslator( &d->qtTranslator );
-	loadTranslation( Common::language() );
+	loadTranslation(Settings::LANGUAGE);
 
 	// Actions
 	d->closeAction = new QAction( tr("Close Window"), this );
@@ -792,39 +791,14 @@ void Application::mailTo( const QUrl &url )
 
 QWidget* Application::mainWindow()
 {
-	QWidget* win = activeWindow();
-	QWidget* first = nullptr;
-	QWidget* root = nullptr;
-
-	if (!win)
+	if(auto *main = qobject_cast<MainWindow*>(activeWindow()))
+		return main;
+	for (QWidget *widget: topLevelWidgets())
 	{
-		// Prefer main window; on Mac also the menu is top level window
-		for (QWidget *widget: topLevelWidgets())
-		{
-			if (widget->isWindow())
-			{
-				if (!first)
-					first = widget;
-
-				if(qobject_cast<MainWindow*>(widget))
-				{
-					win = widget;
-					break;
-				}
-			}
-		}
+		if(auto *main = qobject_cast<MainWindow*>(widget))
+			return main;
 	}
-
-	if(!win)
-		win = first;
-
-	while(win)
-	{
-		root = win;
-		win = win->parentWidget();
-	}
-
-	return root;
+	return nullptr;
 }
 
 void Application::migrateSettings()
@@ -1079,14 +1053,20 @@ void Application::showClient(const QStringList &params, bool crypto, bool sign, 
 	if(!newWindow && params.isEmpty())
 	{
 		// If no files selected (e.g. restoring minimized window), select first
-		w = qobject_cast<MainWindow*>(mainWindow());
+		w = mainWindow();
 	}
 	else if(!newWindow)
 	{
 		// else select first window with no open files
-		auto *main = qobject_cast<MainWindow*>(uniqueRoot());
-		if(main && main->windowFilePath().isEmpty())
-			w = main;
+		for(auto *widget : topLevelWidgets())
+		{
+			if(auto *main = qobject_cast<MainWindow*>(widget);
+				main && main->windowFilePath().isEmpty())
+			{
+				w = main;
+				break;
+			}
+		}
 	}
 	if( !w )
 	{
@@ -1121,7 +1101,7 @@ void Application::showClient(const QStringList &params, bool crypto, bool sign, 
 
 void Application::showTSLWarning(QEventLoop *e)
 {
-	auto *dlg = WarningDialog::show(qApp->mainWindow(), tr(
+	auto *dlg = WarningDialog::show(mainWindow(), tr(
 		"The renewal of Trust Service status List, used for digital signature validation, has failed. "
 		"Please check your internet connection and make sure you have the latest ID-software version "
 		"installed. An expired Trust Service List (TSL) will be used for signature validation. "
@@ -1133,7 +1113,7 @@ void Application::showWarning( const QString &msg, const digidoc::Exception &e )
 {
 	digidoc::Exception::ExceptionCode code = digidoc::Exception::General;
 	QStringList causes = DigiDoc::parseException(e, code);
-	WarningDialog::show(qApp->mainWindow(), msg, causes.join('\n'));
+	WarningDialog::show(mainWindow(), msg, causes.join('\n'));
 }
 
 void Application::showWarning( const QString &msg, const QString &details )
@@ -1142,24 +1122,6 @@ void Application::showWarning( const QString &msg, const QString &details )
 }
 
 QSigner* Application::signer() const { return d->signer; }
-
-QWidget* Application::uniqueRoot()
-{
-	MainWindow* root = nullptr;
-
-	// Return main window if only one main window is opened
-	for(auto *w : topLevelWidgets())
-	{
-		if(auto *r = qobject_cast<MainWindow*>(w))
-		{
-			if(root)
-				return nullptr;
-			root = r;
-		}
-	}
-
-	return root;
-}
 
 void Application::waitForTSL( const QString &file )
 {
