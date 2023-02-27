@@ -54,7 +54,7 @@
 
 #include <algorithm>
 
-#define qdigidoc4log QStringLiteral("%1/%2.log").arg(QDir::tempPath(), qApp->applicationName())
+#define qdigidoc4log QStringLiteral("%1/%2.log").arg(QDir::tempPath(), Application::applicationName())
 
 SettingsDialog::SettingsDialog(int page, QWidget *parent)
 	: QDialog(parent)
@@ -199,7 +199,7 @@ SettingsDialog::SettingsDialog(int page, QWidget *parent)
 		}
 		WarningDialog(tr("DigiDoc4 Client configuration update was successful."), this).exec();
 #ifdef Q_OS_WIN
-		QString path = qApp->applicationDirPath() + QStringLiteral("/id-updater.exe");
+		QString path = Application::applicationDirPath() + QStringLiteral("/id-updater.exe");
 		if (QFile::exists(path))
 			QProcess::startDetached(path, {});
 #endif
@@ -211,7 +211,7 @@ SettingsDialog::SettingsDialog(int page, QWidget *parent)
 
 	connect(ui->btnCheckConnection, &QPushButton::clicked, this, &SettingsDialog::checkConnection);
 	connect(ui->btnFirstRun, &QPushButton::clicked, this, [this] {
-		FirstRun *dlg = new FirstRun(this);
+		auto *dlg = new FirstRun(this);
 		connect(dlg, &FirstRun::langChanged, this, [this](const QString &lang) {
 			retranslate(lang);
 			selectLanguage();
@@ -222,7 +222,7 @@ SettingsDialog::SettingsDialog(int page, QWidget *parent)
 #ifdef CONFIG_URL
 		qApp->conf()->update(true);
 #endif
-		QString cache = qApp->confValue(Application::TSLCache).toString();
+		QString cache = Application::confValue(Application::TSLCache).toString();
 		const QStringList tsllist = QDir(QStringLiteral(":/TSL/")).entryList();
 		for(const QString &file: tsllist)
 		{
@@ -253,8 +253,7 @@ SettingsDialog::SettingsDialog(int page, QWidget *parent)
 		// remove certificates (having %ESTEID% text) from browsing history of Internet Explorer and/or Google Chrome, and do it for all users.
 		QList<TokenData> cache = qApp->signer()->cache();
 		CertStore s;
-		const QList<QSslCertificate> certificates = s.list();
-		for(const QSslCertificate &c: certificates)
+		for(const QSslCertificate &c: s.list())
 		{
 			if(std::any_of(cache.cbegin(), cache.cend(), [&](const TokenData &token) { return token.cert() == c; }))
 				continue;
@@ -340,9 +339,9 @@ void SettingsDialog::initFunctionality()
 	connect(ui->langGroup, qOverload<QAbstractButton*>(&QButtonGroup::buttonClicked), this,
 		[this](QAbstractButton *button){ retranslate(button->property("lang").toString()); });
 
-	ui->chkGeneralTslRefresh->setChecked(qApp->confValue(Application::TSLOnlineDigest).toBool());
+	ui->chkGeneralTslRefresh->setChecked(Application::confValue(Application::TSLOnlineDigest).toBool());
 	connect(ui->chkGeneralTslRefresh, &QCheckBox::toggled, [](bool checked) {
-		qApp->setConfValue(Application::TSLOnlineDigest, checked);
+		Application::setConfValue(Application::TSLOnlineDigest, checked);
 	});
 	ui->chkShowPrintSummary->setChecked(Settings::SHOW_PRINT_SUMMARY);
 	connect(ui->chkShowPrintSummary, &QCheckBox::toggled, this, &SettingsDialog::togglePrinting);
@@ -415,18 +414,22 @@ void SettingsDialog::initFunctionality()
 	});
 
 	// pageServices - TimeStamp
+	ui->txtTimeStamp->setReadOnly(Settings::TSA_URL.isLocked());
+	ui->txtTimeStamp->setPlaceholderText(Application::confValue(Settings::TSA_URL.KEY).toString());
+	QString TSA_URL = Settings::TSA_URL.value(Application::confValue(Application::TSAUrl));
+	ui->txtTimeStamp->setText(ui->txtTimeStamp->placeholderText() == TSA_URL ? QString() : TSA_URL);
+	ui->rdTimeStampDefault->setDisabled(Settings::TSA_URL_CUSTOM.isLocked());
+	ui->rdTimeStampCustom->setEnabled(ui->rdTimeStampDefault->isEnabled());
+	ui->rdTimeStampCustom->setChecked(Settings::TSA_URL_CUSTOM);
+	ui->wgtTSACert->setDisabled(Settings::TSA_CERT.isLocked());
+	ui->wgtTSACert->setVisible(ui->rdTimeStampCustom->isChecked());
 	connect(ui->rdTimeStampCustom, &QRadioButton::toggled, ui->txtTimeStamp, [this](bool checked) {
 		ui->txtTimeStamp->setEnabled(checked);
 		ui->wgtTSACert->setVisible(checked);
 		Settings::TSA_URL_CUSTOM = checked;
 	});
-	ui->rdTimeStampCustom->setChecked(Settings::TSA_URL_CUSTOM);
-	ui->wgtTSACert->setVisible(ui->rdTimeStampCustom->isChecked());
-	ui->txtTimeStamp->setPlaceholderText(qApp->confValue(Settings::TSA_URL.KEY).toString());
-	QString TSA_URL = Settings::TSA_URL.value(qApp->confValue(Application::TSAUrl));
-	ui->txtTimeStamp->setText(ui->txtTimeStamp->placeholderText() == TSA_URL ? QString() : TSA_URL);
 	connect(ui->txtTimeStamp, &QLineEdit::textChanged, this, [this](const QString &url) {
-		qApp->setConfValue(Application::TSAUrl, url);
+		Application::setConfValue(Application::TSAUrl, url);
 		if(url.isEmpty())
 		{
 			Settings::TSA_CERT.clear();
@@ -447,13 +450,16 @@ void SettingsDialog::initFunctionality()
 	updateTSACert(QSslCertificate(QByteArray::fromBase64(Settings::TSA_CERT), QSsl::Der));
 
 	// pageServices - MID
+	ui->txtMIDUUID->setReadOnly(Settings::MID_UUID.isLocked());
+	ui->txtMIDUUID->setText(Settings::MID_UUID);
+	ui->rdMIDUUIDDefault->setDisabled(Settings::MID_UUID_CUSTOM.isLocked());
+	ui->rdMIDUUIDCustom->setEnabled(ui->rdMIDUUIDDefault->isEnabled());
+	ui->rdMIDUUIDCustom->setChecked(Settings::MID_UUID_CUSTOM);
 	connect(ui->rdMIDUUIDCustom, &QRadioButton::toggled, ui->txtMIDUUID, [=](bool checked) {
 		ui->txtMIDUUID->setEnabled(checked);
 		Settings::MID_UUID_CUSTOM = checked;
 		Settings::SID_UUID_CUSTOM = checked;
 	});
-	ui->rdMIDUUIDCustom->setChecked(Settings::MID_UUID_CUSTOM);
-	ui->txtMIDUUID->setText(Settings::MID_UUID);
 	connect(ui->txtMIDUUID, &QLineEdit::textChanged, this, [](const QString &text) {
 		Settings::MID_UUID = text;
 		Settings::SID_UUID = text;
@@ -463,18 +469,22 @@ void SettingsDialog::initFunctionality()
 	});
 
 	// pageValidation - SiVa
+	ui->txtSiVa->setReadOnly(Settings::SIVA_URL.isLocked());
+	ui->txtSiVa->setPlaceholderText(Application::confValue(Settings::SIVA_URL.KEY).toString());
+	QString SIVA_URL = Settings::SIVA_URL.value(Application::confValue(Application::SiVaUrl));
+	ui->txtSiVa->setText(ui->txtSiVa->placeholderText() == SIVA_URL ? QString() : SIVA_URL);
+	ui->rdSiVaDefault->setDisabled(Settings::SIVA_URL_CUSTOM.isLocked());
+	ui->rdSiVaCustom->setEnabled(ui->rdSiVaDefault->isEnabled());
+	ui->rdSiVaCustom->setChecked(Settings::SIVA_URL_CUSTOM);
+	ui->wgtSiVaCert->setDisabled(Settings::SIVA_CERT.isLocked());
+	ui->wgtSiVaCert->setVisible(ui->rdSiVaCustom->isChecked());
 	connect(ui->rdSiVaCustom, &QRadioButton::toggled, ui->txtSiVa, [this](bool checked) {
 		ui->txtSiVa->setEnabled(checked);
 		ui->wgtSiVaCert->setVisible(checked);
 		Settings::SIVA_URL_CUSTOM = checked;
 	});
-	ui->rdSiVaCustom->setChecked(Settings::SIVA_URL_CUSTOM);
-	ui->wgtSiVaCert->setVisible(ui->rdSiVaCustom->isChecked());
-	ui->txtSiVa->setPlaceholderText(qApp->confValue(Settings::SIVA_URL.KEY).toString());
-	QString SIVA_URL = Settings::SIVA_URL.value(qApp->confValue(Application::SiVaUrl));
-	ui->txtSiVa->setText(ui->txtSiVa->placeholderText() == SIVA_URL ? QString() : SIVA_URL);
 	connect(ui->txtSiVa, &QLineEdit::textChanged, this, [this](const QString &url) {
-		qApp->setConfValue(Application::SiVaUrl, url);
+		Application::setConfValue(Application::SiVaUrl, url);
 		if(url.isEmpty())
 		{
 			Settings::SIVA_CERT.clear();
@@ -595,7 +605,7 @@ void SettingsDialog::updateProxy()
 void SettingsDialog::updateVersion()
 {
 	ui->txtNavVersion->setText(tr("%1 version %2, released %3")
-		.arg(tr("DigiDoc4 Client"), qApp->applicationVersion(), QStringLiteral(BUILD_DATE)));
+		.arg(tr("DigiDoc4 Client"), Application::applicationVersion(), QStringLiteral(BUILD_DATE)));
 }
 
 void SettingsDialog::saveProxy()
@@ -729,8 +739,9 @@ void SettingsDialog::saveFile(const QString &name, const QString &path)
 
 void SettingsDialog::saveFile(const QString &name, const QByteArray &content)
 {
-	QString filename = FileDialog::getSaveFileName(this, tr("Save as"), QStringLiteral( "%1/%2_%3_%4")
-		.arg(QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation), qApp->applicationName(), qApp->applicationVersion(), name),
+	QString filename = FileDialog::getSaveFileName(this, tr("Save as"), QStringLiteral( "%1/%2_%3_%4").arg(
+		QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
+			Application::applicationName(), Application::applicationVersion(), name),
 		tr("Text files (*.txt)") );
 	if( filename.isEmpty() )
 		return;

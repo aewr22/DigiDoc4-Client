@@ -84,7 +84,7 @@ SmartIDProgress::SmartIDProgress(QWidget *parent)
 	: d(new Private(parent))
 {
 	const_cast<QLoggingCategory&>(SIDLog()).setEnabled(QtDebugMsg,
-		QFile::exists(QStringLiteral("%1/%2.log").arg(QDir::tempPath(), qApp->applicationName())));
+		QFile::exists(QStringLiteral("%1/%2.log").arg(QDir::tempPath(), Application::applicationName())));
 	d->setWindowFlags(Qt::Dialog|Qt::CustomizeWindowHint);
 	d->setupUi(d);
 	d->move(parent->geometry().center() - d->geometry().center());
@@ -124,19 +124,19 @@ background-color: #007aff;
 	QObject::connect(d->statusTimer, &QTimeLine::frameChanged, d->taskbar->progress(), &QWinTaskbarProgress::setValue);
 #endif
 
+#ifdef CONFIG_URL
 	QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
 	QList<QSslCertificate> trusted;
-#ifdef CONFIG_URL
-	ssl.setCaCertificates({});
-	for(const QJsonValue c: qApp->confValue(QLatin1String("CERT-BUNDLE")).toArray())
-		trusted.append(QSslCertificate(QByteArray::fromBase64(c.toString().toLatin1()), QSsl::Der));
-#endif
+	for(const auto &cert: Application::confValue(QLatin1String("CERT-BUNDLE")).toArray())
+		trusted.append(QSslCertificate(QByteArray::fromBase64(cert.toString().toLatin1()), QSsl::Der));
+	ssl.setCaCertificates(trusted);
 	d->req.setSslConfiguration(ssl);
+#endif
 	d->req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 	d->req.setRawHeader("User-Agent", QStringLiteral("%1/%2 (%3)")
-		.arg(qApp->applicationName(), qApp->applicationVersion(), Common::applicationOs()).toUtf8());
+		.arg(Application::applicationName(), Application::applicationVersion(), Common::applicationOs()).toUtf8());
 	d->manager = new QNetworkAccessManager(d);
-	QObject::connect(d->manager, &QNetworkAccessManager::sslErrors, d->manager, [=](QNetworkReply *reply, const QList<QSslError> &err) {
+	QObject::connect(d->manager, &QNetworkAccessManager::sslErrors, d->manager, [](QNetworkReply *reply, const QList<QSslError> &err) {
 		QList<QSslError> ignore;
 		for(const QSslError &e: err)
 		{
@@ -145,8 +145,8 @@ background-color: #007aff;
 			case QSslError::UnableToGetLocalIssuerCertificate:
 			case QSslError::CertificateUntrusted:
 			case QSslError::SelfSignedCertificateInChain:
-				if(trusted.contains(reply->sslConfiguration().peerCertificate())) {
-					ignore << e;
+				if(reply->sslConfiguration().caCertificates().contains(reply->sslConfiguration().peerCertificate())) {
+					ignore.append(e);
 					break;
 				}
 				Q_FALLTHROUGH();

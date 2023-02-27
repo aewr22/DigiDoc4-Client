@@ -29,10 +29,10 @@ using Option = Settings::Option<T, D>;
 const Option<QString> Settings::MID_UUID { QStringLiteral("MIDUUID") };
 const Option<QString> Settings::MID_NAME { QStringLiteral("MIDNAME"), QStringLiteral("RIA DigiDoc") };
 const Option<QString, QString (*)()> Settings::MID_PROXY_URL { QStringLiteral("MID-PROXY-URL"), [] {
-	return qApp->confValue(QLatin1String("MID-PROXY-URL")).toString(QStringLiteral(MOBILEID_URL));
+	return Application::confValue(QLatin1String("MID-PROXY-URL")).toString(QStringLiteral(MOBILEID_URL));
 }};
 const Option<QString, QString (*)()> Settings::MID_SK_URL { QStringLiteral("MID-SK-URL"), [] {
-	return qApp->confValue(QLatin1String("MID-SK-URL")).toString(QStringLiteral(MOBILEID_URL));
+	return Application::confValue(QLatin1String("MID-SK-URL")).toString(QStringLiteral(MOBILEID_URL));
 }};
 const Option<bool, bool (*)()> Settings::MID_UUID_CUSTOM
 	{ QStringLiteral("MIDUUID-CUSTOM"), [] { return Settings::MID_UUID.isSet(); } };
@@ -44,10 +44,14 @@ const Option<bool> Settings::MOBILEID_ORDER { QStringLiteral("MIDOrder"), true }
 const Option<QString> Settings::SID_UUID { QStringLiteral("SIDUUID") };
 const Option<QString> Settings::SID_NAME { QStringLiteral("SIDNAME"), QStringLiteral("RIA DigiDoc") };
 const Option<QString, QString (*)()> Settings::SID_PROXY_URL { QStringLiteral("SID-PROXY-URL"), []{
-	return qApp->confValue(QLatin1String("SIDV2-PROXY-URL")).toString(qApp->confValue(QLatin1String("SID-PROXY-URL")).toString(QStringLiteral(SMARTID_URL)));
+	return Application::confValue(QLatin1String("SIDV2-PROXY-URL"))
+		.toString(Application::confValue(QLatin1String("SID-PROXY-URL"))
+			.toString(QStringLiteral(SMARTID_URL)));
 }};
 const Option<QString, QString (*)()> Settings::SID_SK_URL { QStringLiteral("SID-SK-URL"), []{
-	return qApp->confValue(QLatin1String("SIDV2-SK-URL")).toString(qApp->confValue(QLatin1String("SID-SK-URL")).toString(QStringLiteral(SMARTID_URL)));
+	return Application::confValue(QLatin1String("SIDV2-SK-URL"))
+		.toString(Application::confValue(QLatin1String("SID-SK-URL"))
+			.toString(QStringLiteral(SMARTID_URL)));
 }};
 const Option<bool, bool (*)()> Settings::SID_UUID_CUSTOM
 	{ QStringLiteral("SIDUUID-CUSTOM"), [] { return Settings::SID_UUID.isSet(); } };
