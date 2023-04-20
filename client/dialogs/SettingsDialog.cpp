@@ -101,8 +101,6 @@ SettingsDialog::SettingsDialog(int page, QWidget *parent)
 	ui->btGeneralChooseDirectory->setFont(regularFont);
 	ui->txtGeneralDirectory->setFont(regularFont);
 
-	ui->chkGeneralTslRefresh->setFont(regularFont);
-
 	ui->chkShowPrintSummary->setFont(regularFont);
 	ui->chkRoleAddressInfo->setFont(regularFont);
 	ui->chkLibdigidocppDebug->setFont(regularFont);
@@ -328,10 +326,6 @@ void SettingsDialog::initFunctionality()
 	connect(ui->langGroup, qOverload<QAbstractButton*>(&QButtonGroup::buttonClicked), this,
 		[this](QAbstractButton *button){ retranslate(button->property("lang").toString()); });
 
-	ui->chkGeneralTslRefresh->setChecked(qApp->confValue(Application::TSLOnlineDigest).toBool());
-	connect(ui->chkGeneralTslRefresh, &QCheckBox::toggled, [](bool checked) {
-		qApp->setConfValue(Application::TSLOnlineDigest, checked);
-	});
 	ui->chkShowPrintSummary->setChecked(Settings::SHOW_PRINT_SUMMARY);
 	connect(ui->chkShowPrintSummary, &QCheckBox::toggled, this, &SettingsDialog::togglePrinting);
 	connect(ui->chkShowPrintSummary, &QCheckBox::toggled, this, [](bool checked) {
