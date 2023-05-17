@@ -285,8 +285,8 @@ private:
 		std::vector<digidoc::X509Cert> certs;
 		for(const auto &cert: Application::confValue(key).toArray())
 		{
-			QByteArray der = fromBase64(cert);
-			certs.emplace_back((const unsigned char*)der.constData(), size_t(der.size()));
+			if(QByteArray der = fromBase64(cert); !der.isEmpty())
+				certs.emplace_back((const unsigned char*)der.constData(), size_t(der.size()));
 		}
 		return certs;
 	}
@@ -339,7 +339,7 @@ Application::Application( int &argc, char **argv )
 		sendMessage(args.join(QStringLiteral("\", \"")));
 		return;
 	}
-	connect( this, SIGNAL(messageReceived(QString)), SLOT(parseArgs(QString)) );
+	connect(this, &Application::messageReceived, this, qOverload<const QString&>(&Application::parseArgs));
 #endif
 
 	QDesktopServices::setUrlHandler(QStringLiteral("browse"), this, "browse");
@@ -363,7 +363,7 @@ Application::Application( int &argc, char **argv )
 	connect(d->closeAction, &QAction::triggered, this, &Application::closeWindow);
 	d->newClientAction = new QAction( tr("New Window"), this );
 	d->newClientAction->setShortcut( Qt::CTRL + Qt::Key_N );
-	connect(d->newClientAction, &QAction::triggered, this, [&]{ showClient({}, false, false, true); });
+	connect(d->newClientAction, &QAction::triggered, this, []{ showClient({}, false, false, true); });
 
 	// This is needed to release application from memory (Windows)
 	setQuitOnLastWindowClosed( true );
@@ -604,7 +604,7 @@ bool Application::event(QEvent *event)
 	case QEvent::FileOpen:
 	{
 		QString fileName = static_cast<QFileOpenEvent*>(event)->file().normalized(QString::NormalizationForm_C);
-		QTimer::singleShot(0, this, [this, fileName] {
+		QTimer::singleShot(0, this, [fileName] {
 			parseArgs({ fileName });
 		});
 		return true;
@@ -647,10 +647,9 @@ void Application::mailTo( const QUrl &url )
 {
 	QUrlQuery q(url);
 #if defined(Q_OS_WIN)
-	QString file = q.queryItemValue( "attachment", QUrl::FullyDecoded );
-	QLibrary lib("mapi32");
-	if( LPMAPISENDMAILW mapi = LPMAPISENDMAILW(lib.resolve("MAPISendMailW")) )
+	if(QLibrary lib("mapi32"); LPMAPISENDMAILW mapi = LPMAPISENDMAILW(lib.resolve("MAPISendMailW")))
 	{
+		QString file = q.queryItemValue( "attachment", QUrl::FullyDecoded );
 		QString filePath = QDir::toNativeSeparators( file );
 		QString fileName = QFileInfo( file ).fileName();
 		QString subject = q.queryItemValue( "subject", QUrl::FullyDecoded );
@@ -917,7 +916,6 @@ void Application::showClient(const QStringList &params, bool crypto, bool sign, 
 	// Required for restoring minimized window on macOS
 	w->setWindowState(Qt::WindowActive);
 #endif
-	w->addAction(d->closeAction);
 	w->activateWindow();
 	w->show();
 	w->raise();
